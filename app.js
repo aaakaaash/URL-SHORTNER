@@ -1,37 +1,43 @@
-require("dotenv").config();
+const env = require('dotenv').config();
 const express = require("express");
 const db = require("./config/db");
 const cors = require("cors");
 const session = require("express-session");
-const RedisStore = require("connect-redis")(session);
+const RedisStore = require("connect-redis").default;
+const Redis = require('redis'); 
 const redisClient = require("./config/redis");
-const passport = require("passport");
-const helmet = require("helmet"); 
+const passport = require("./config/passport");
+const helmet = require("helmet");
+const path = require("path"); 
 const routes = require("./router/route");
-
 
 db();
 
 const app = express();
 
+(async () => {
+  await redisClient.connect().catch(console.error);
+})();
 
 app.use(helmet());
 
-
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:3000", // Allow frontend requests
+    origin: process.env.CLIENT_URL || "http://localhost:3000",
     credentials: true,
   })
 );
 
-
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
 
 app.use(
   session({
-    store: new RedisStore({ client: redisClient }),
+    store: new RedisStore({
+      client: redisClient,
+      prefix: "myapp:",
+    }),
     secret: process.env.SESSION_SECRET || "defaultSecret",
     resave: false,
     saveUninitialized: false,
@@ -43,16 +49,18 @@ app.use(
   })
 );
 
-
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
+
+app.use(express.static(path.join(__dirname, "public")));
 
 app.use(routes);
 
-
 app.use((err, req, res, next) => {
-  console.error("❌ Error:", err.message);
+  console.error(" Error:", err.message);
   res.status(500).json({ error: "Internal Server Error" });
 });
 

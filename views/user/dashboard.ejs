@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener Dashboard</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --background-color: #f3f4f6;
+            --card-background: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--background-color);
+            line-height: 1.6;
+        }
+
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .shortener-section {
+            background-color: var(--card-background);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .input-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            font-size: 1rem;
+            background-color: white;
+        }
+
+        .button {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.2s;
+        }
+
+        .button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .analytics-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .analytics-card {
+            background-color: var(--card-background);
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .analytics-card h3 {
+            margin-bottom: 1rem;
+            color: #374151;
+        }
+
+        .analytics-data {
+            display: none;
+            margin-top: 1rem;
+        }
+
+        .analytics-data.active {
+            display: block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .stat-item {
+            background-color: #f9fafb;
+            padding: 1rem;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .stat-item h4 {
+            color: #6b7280;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-item p {
+            color: #111827;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="shortener-section">
+            <h2>Create Short URL</h2>
+            <form id="urlForm">
+                <div class="input-group">
+                    <label for="longUrl">Long URL</label>
+                    <input type="url" id="longUrl" name="longUrl" required placeholder="Enter your long URL">
+                </div>
+                <div class="input-group">
+                    <label for="customAlias">Custom Alias (Optional)</label>
+                    <input type="text" id="customAlias" name="customAlias" placeholder="Enter custom alias">
+                </div>
+                <div class="input-group">
+                    <label for="topic">Topic (Optional)</label>
+                    <select id="topic" name="topic">
+                        <option value="">Select a topic</option>
+                        <option value="acquisition">Acquisition</option>
+                        <option value="activation">Activation</option>
+                        <option value="retention">Retention</option>
+                    </select>
+                </div>
+                <button type="submit" class="button">Create Short URL</button>
+            </form>
+        </div>
+
+        <div class="analytics-section">
+            <div class="analytics-card">
+                <h3>URL Analytics</h3>
+                <div class="input-group">
+                    <input type="text" id="aliasAnalytics" placeholder="Enter URL alias">
+                    <button onclick="getUrlAnalytics()" class="button">View Analytics</button>
+                </div>
+                <div id="urlAnalyticsData" class="analytics-data"></div>
+            </div>
+
+            <div class="analytics-card">
+                <h3>Topic Analytics</h3>
+                <div class="input-group">
+                    <select id="topicAnalytics">
+                        <option value="acquisition">Acquisition</option>
+                        <option value="activation">Activation</option>
+                        <option value="retention">Retention</option>
+                    </select>
+                    <button onclick="getTopicAnalytics()" class="button">View Analytics</button>
+                </div>
+                <div id="topicAnalyticsData" class="analytics-data"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('urlForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = {
+                longUrl: document.getElementById('longUrl').value,
+                customAlias: document.getElementById('customAlias').value,
+                topic: document.getElementById('topic').value
+            };
+
+            try {
+                const response = await fetch('/api/shorten', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                const data = await response.json();
+                
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+
+        async function getUrlAnalytics() {
+            const alias = document.getElementById('aliasAnalytics').value;
+            try {
+                const response = await fetch(`/api/analytics/${alias}`);
+                const data = await response.json();
+                displayUrlAnalytics(data);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function getTopicAnalytics() {
+            const topic = document.getElementById('topicAnalytics').value;
+            try {
+                const response = await fetch(`/api/analytics/topic/${topic}`);
+                const data = await response.json();
+                displayTopicAnalytics(data);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function displayUrlAnalytics(data) {
+            const container = document.getElementById('urlAnalyticsData');
+            container.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <h4>Total Clicks</h4>
+                        <p>${data.totalClicks}</p>
+                    </div>
+                    <div class="stat-item">
+                        <h4>Unique Users</h4>
+                        <p>${data.uniqueUsers}</p>
+                    </div>
+                </div>
+            `;
+            container.classList.add('active');
+        }
+
+        function displayTopicAnalytics(data) {
+            const container = document.getElementById('topicAnalyticsData');
+            container.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <h4>Total URLs</h4>
+                        <p>${data.urls.length}</p>
+                    </div>
+                    <div class="stat-item">
+                        <h4>Total Clicks</h4>
+                        <p>${data.totalClicks}</p>
+                    </div>
+                    <div class="stat-item">
+                        <h4>Unique Users</h4>
+                        <p>${data.uniqueUsers}</p>
+                    </div>
+                </div>
+            `;
+            container.classList.add('active');
+        }
+    </script>
+</body>
+</html>
